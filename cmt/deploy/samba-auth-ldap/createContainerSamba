@@ -1,0 +1,30 @@
+#!/bin/bash
+
+hey='a'
+
+#createContainerLDAP () {
+    if $isTesting; then
+       echo -e "$ASTE Image: $image_uno, Container suggested name: $container_name"
+       echo -e "$STAR Container ports:  $ports"
+    
+    else
+        echo -e "$ASTE Docker image: $image_uno, Container suggested name: $container_name"
+        docker run --name $container_name \
+                    -it \
+                    $volumes \
+                    $shares \
+                    $ports \
+                    -d $image_uno
+   fi
+ 
+                     #$ports \
+        # -v $container_dir/$html_dir:/var/www/html/ \    <-- REPLACE WITH ports
+        #   --- was used/tested
+        #-v $container_dir/$apache_conf:$int_apacheConf_dir \
+        # -p "80:80" \
+        #-p $pub_ftpport:$priv_ftpport   \
+
+        # -p $pub_webport:80 \
+
+        #-p "80:80" \
+#}

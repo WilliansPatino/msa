@@ -1,0 +1,20 @@
+dn: cn=demo,ou=Groups,dc=grupojules,dc=com
+objectClass: posixGroup
+cn: demo
+gidNumber: 5000
+
+dn: uid=demo,ou=People,dc=grupojules,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: demo
+sn: Doe
+givenName: demo
+cn: demo Doe
+displayName: demo Doe
+uidNumber: 10000
+gidNumber: 5000
+userPassword: {SSHA}NaBYpQWWuRFdGiN+ML519ueX7wUk3zvI
+gecos: demo Doe
+loginShell: /bin/bash
+homeDirectory: /home/demo

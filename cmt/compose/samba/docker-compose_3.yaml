@@ -1,0 +1,48 @@
+ldap_Samba:
+    image: ppwillians/centos-openldap_ssh
+    restart: always 
+    volumes:
+        - ~/containers/openldap:/etc/openldap 
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+
+nginx-proxy:
+    image: jwilder/nginx-proxy
+    restart: always
+    ports:
+        - "80:80"
+        - "443:443"
+    volumes: 
+        - /var/run/docker.sock:/tmp/docker.sock:ro
+        - ~/containers/ldap_samba/certs:/etc/nginx/certs:ro
+        - /etc/nginx/vhost.d
+        - /usr/share/nginx/html
+    labels: 
+        - com.github.jrcs.letsencrypt_nginx_proxy_companion.ldap_Samba 
+
+letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    restart: always
+    volumes:
+        - ~/containers/ldap_samba/certs:/etc/nginx/certs:rw
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+    volumes_from: 
+        - nginx-proxy:rw
+                        
+www:
+                    image: nginx
+                    restart: always
+                    expose:
+                        - "80"
+                    
+                    volumes:
+                        - ~/containers/ldap_samba/www:/usr/share/nginx/html:ro
+                    environment: 
+                       - VIRTUAL_HOST=grupojules.local
+                       - LETSENCRYPT_HOST=grupojules.local
+                       - LETSENCRYPT_EMAIL=ppwj@yahoo.com
+        
+
+        # ports:
+        # - "80:80"
+
+# restart: always

@@ -1,0 +1,21 @@
+dn: dc=grupojules.com,dc=com
+objectClass: dcObject
+objectClass: organizationalUnit
+dc: grupojules.com
+ou: grupojules.com Dot Com
+
+dn: cn=admin,dc=grupojules.com,dc=com
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: admin
+description: LDAP administrator
+userPassword: {SSHA}2NOGI6Ezf6mhjvuIadIKr7GN0pNpKYwP
+
+dn: ou=people,dc=grupojules.com,dc=com
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=groups,dc=grupojules.com,dc=com
+objectClass: organizationalUnit
+ou: groups
+

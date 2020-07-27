@@ -1,0 +1,72 @@
+#!/bin/bash
+
+
+basedir='/msa/cmt/deploy/samba-auth-ldap'
+
+image_uno='willianspatino/samba'
+
+isTesting=false
+
+container_name='samba_0'
+
+udp='-p 137:137/udp -p 138:138/udp'
+tcp='-p 139:139/tcp -p 445:445/tcp -p 8080:80'
+
+ports="$udp $tcp"
+
+ext_vol_3="$basedir/etc_samba/"
+int_vol_3='/etc/samba'
+
+ext_vol_2="$basedir/var_lib_ldap/"
+int_vol_2='/var/lib/ldap'
+
+scripts="$basedir/samba_tools:/worker"
+
+volumes="-v $ext_vol_3:$int_vol_3"
+# -v $ext_vol_2:$int_vol_2"
+
+shares="-v $basedir/shares:/shares -v $scripts"
+
+
+# ports 
+# allow incoming UDP connections on ports 137 and 138 
+# and TCP connections on ports 139 and 445.
+
+
+# get basic config
+
+. $basedir/colors/setting
+
+. $basedir/createContainerSamba
+
+
+# cmd=$(docker run -dit --name Clone -p 65530:80 willianspatino/wordpress)
+#     echo -e "$cmd"
+
+#docker run --name clone -v vol1:/etc/openldap -dit willianspatino/ldap
+#docker cp  Clone:/etc/apache2 /tmp/
+
+# # docker create \
+#   --name=ldap-auth \
+#   -e TZ=Europe/London \
+#   -p 8888:8888 \
+#   -p 9000:9000 \
+#   --restart unless-stopped \
+#   linuxserver/ldap-auth
+
+
+# version: "2.1"
+# services:
+#   ldap-auth:
+#     image: linuxserver/ldap-auth
+#     container_name: ldap-auth
+#     environment:
+#       - TZ=Europe/London
+#     ports:
+#       - 8888:8888
+#       - 9000:9000
+#     restart: unless-stopped
+
+
+# smbldap-tools/
+# this package has samba schema

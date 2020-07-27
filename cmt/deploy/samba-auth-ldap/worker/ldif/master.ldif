@@ -1,0 +1,13 @@
+dn: ou=People,dc=grupojules,dc=com
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Groups,dc=grupojules,dc=com
+objectClass: organizationalUnit
+ou: Groups
+
+dn: cn=IT,ou=Groups,dc=grupojules,dc=com
+objectClass: posixGroup
+cn: IT
+gidNumber: 5001
+

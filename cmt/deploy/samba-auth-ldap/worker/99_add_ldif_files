@@ -1,0 +1,1 @@
+ldapadd -x -D cn=admin,dc=grupojules,dc=com -W -f $1 

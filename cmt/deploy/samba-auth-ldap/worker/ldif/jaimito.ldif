@@ -1,0 +1,15 @@
+dn: uid=jaimito,ou=People,dc=grupojules,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: jaimito
+sn: EJEMPLO
+givenName: jaimito
+cn: jaimito
+displayName: jaimito
+uidNumber: 100003
+gidNumber: 5001
+userPassword: {SSHA}9WV5GSepg49V2vipYg0tzHshg1FuCJ8k
+gecos: jaimito
+loginShell: /bin/bash
+homeDirectory: /home/jaimito

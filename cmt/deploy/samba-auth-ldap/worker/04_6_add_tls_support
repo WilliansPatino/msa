@@ -1,0 +1,7 @@
+# 
+# update ca certificate
+#
+#
+certtool --generate-privkey \
+--bits 2048 \
+--outfile /etc/ldap/ldap01_slapd_key.pem

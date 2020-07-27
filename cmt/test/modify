@@ -1,0 +1,2 @@
+sed -i -e '/SSLCertificateKeyFile/ s/^#*/#/' file
+sed -i -e '/SSLCertificateFile/ s/^#*/#/' file

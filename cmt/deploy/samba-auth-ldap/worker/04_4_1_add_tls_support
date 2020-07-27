@@ -1,0 +1,8 @@
+# 
+# create self-signed CA certificate
+#
+#
+certtool --generate-self-signed \
+--load-privkey /etc/ssl/private/mycakey.pem \
+--template /etc/ssl/ca.info \
+--outfile /usr/local/share/ca-certificates/mycacert.crt

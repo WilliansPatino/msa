@@ -1,0 +1,7 @@
+www:
+    image: nginx
+# restart: 
+    ports:
+        - "80:80"
+    volumes:
+        - ~/_testing/nginx_at_80/www:/usr/share/nginx/html:ro

@@ -1,0 +1,1 @@
+ldapsearch -x -LLL -H ldap:/// -b dc=grupojules,dc=com dn 

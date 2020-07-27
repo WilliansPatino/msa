@@ -1,0 +1,5 @@
+dn: cn=webdevelopment,ou=Groups,dc=grupojules,dc=com
+objectClass: posixGroup
+cn: IT
+gidNumber: 5001
+

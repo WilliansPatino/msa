@@ -1,0 +1,40 @@
+nginx-proxy:
+    image: jwilder/nginx-proxy
+#    restart: always
+    ports:
+        - "80:80"
+        - "443:443"
+    volumes: 
+        - /var/run/docker.sock:/tmp/docker.sock:ro
+        - ~/_testing/nginx_at_80/certs_grupojules.com:/etc/nginx/certs:ro
+        - /etc/nginx/vhost.d
+        - /usr/share/nginx/html
+    labels: 
+        - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy 
+
+letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+#    restart: always
+    volumes:
+        - ~/_testing/nginx_at_80/certs_grupojules.com:/etc/nginx/certs:rw
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+    volumes_from: 
+        - nginx-proxy:rw
+                        
+
+grupojules.com:
+                    image: nginx
+#                    restart: always
+                    expose:
+                        - "80"
+                    
+                    volumes:
+                        - ~/_testing/nginx_at_80/grupojules.com:/usr/share/nginx/html:ro
+                    environment: 
+                       - VIRTUAL_HOST=grupojules.com
+                       - LETSENCRYPT_HOST=grupojules.com,grupojules.com
+                       - LETSENCRYPT_EMAIL=ppwj@yahoo.com
+        
+
+        # ports:
+        # - "80:80"

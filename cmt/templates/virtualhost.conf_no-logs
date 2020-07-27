@@ -1,0 +1,11 @@
+<VirtualHost *:443>
+    ServerAdmin admin@example.com
+    ServerName www.example.com
+    ServerAlias example.com
+ 
+    DocumentRoot /var/www/html
+ 
+    SSLEngine on
+    SSLCertificateFile /etc/pki/tls/certs/example.com.crt
+    SSLCertificateKeyFile /etc/pki/tls/certs/example.com.key
+</VirtualHost>

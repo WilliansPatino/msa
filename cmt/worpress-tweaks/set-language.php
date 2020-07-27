@@ -1,0 +1,1 @@
+define ('WPLANG', 'xx_YY');

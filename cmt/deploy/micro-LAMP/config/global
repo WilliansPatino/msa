@@ -1,0 +1,127 @@
+#!/bin/bash
+#
+# programmed by  Willians Patino,  ppwj@yahoo,      12h19, 24.05.2020
+#
+#------    G L O B A L    E N V I R O N M E N T -----------------------
+
+SysAdmin="ppwj@yahoo.com"     # developer/SRE
+
+# Docker server IP
+server_ip="10.42.0.1"  
+
+# Personalized container name
+container_name="myserver"     
+
+#  Container domain to be published as... 
+domain="myserver.localdomain"   
+
+# optional
+OPTdomain="$domain.localdomain"
+
+# forcing ssl certs creation
+recreateCerts=false
+
+# microservices programming directory root
+msrv_path="/msa"
+
+#  Container Management Tools 
+CMT="$msrv_path/cmt"
+
+# Deployed containers
+DEPLOY="/deployments"
+
+# Quick container management (start, stop, remove and info)
+TOOLS="$DEPLOY/manage"
+
+
+#-------  (1) CMS environment         
+
+    int_apacheConf_dir="/etc/apache2"                      # Apache config
+
+    # Wordpress database user
+    dbuser="admin"
+    #  Wordpress database user password
+    dbpass="PASSWORD!"                
+
+    # databases
+    dbname=$container_name              
+    
+    # Original configuration files
+    apache2Conf_file="$apache_conf/apache2.conf"
+    defaultSSLConf_file="sites-available/default-ssl.conf"
+    defaultVirtualHostConf_file="sites-available/000-default.conf"
+
+    # docker  image
+    cmsImage="willianspatino/wordpress"
+
+    # - ports
+    alt_html_port="80:80"                       # alternate public port
+    private_html_port="443"                     # private port 
+    pub_webport="8080"                          # public port cms management
+
+    # -- persistence 
+    certs="certs"                   # Certificates
+    html_dir="wp"                   # CMS Directory Root  (default by Apache2:  /var/www/html )
+    apache_conf="apache2"           # Apache2 configuration
+
+    # optional
+    priv_ftpport="21"
+
+    # Include  Wordpress in this container      
+    include_wordpress=true          # ( Default )
+
+
+#-------  (2) MariaDB environment            
+
+    # user
+
+    # MariaDB root admin password
+    root_pass="mCn@33db"            
+
+    # Container internal port
+    private_mysql_port="3306"
+    
+    #root_pass="m1nr00t"          # assigned according systems
+
+    # docker image
+    mariadbImage="willianspatino/mariadb"
+
+    # -- persistence 
+    db_config="mariadb"             # MariaDB config
+    data_dir="database"             # Databases
+
+
+    # Incluye mariadb
+    include_mariadb=true            # by default 
+
+    pub_dbaseprt="3764"            # public port database management
+
+    dbservices="$YELLOR mysql -h $server_ip -P $pub_dbaseprt -u root -p $RST "
+
+
+
+# For production environment, by default 
+include_ssl=true               
+
+isPublicHTTP=false                  # by default, 
+                                    # I guess my container will be deployed
+                                    # and published to the Internet
+
+# It's friendly having a local webserver for testing or personal use.
+# isPublicHTTP=true                  
+
+
+# default certificates files,   might be necessary to change it
+SSLCertificateFile="server.crt"
+SSLCertificateKeyFile="server.key"
+
+
+
+#  Source SSL Configuration and location 
+SSLDIR="$CMT/ssl"
+CONFIGFILE="$CMT/create-ssl/openssl.conf"
+
+# User assigned to manage content via SFTP
+    localuser="$dbuser$pub_webport"
+    pub_ftpport="115${pub_webport:2}"          # ftp accest port
+

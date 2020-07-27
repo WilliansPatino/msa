@@ -1,0 +1,1 @@
+rsync -avzhe "ssh -p 2264" addcms wp@octopus:/msa/cmt/deploy/complete-cms/

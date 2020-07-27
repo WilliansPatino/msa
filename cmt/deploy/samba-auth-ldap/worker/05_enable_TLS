@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# adjust certificate info into LDAP to enable TLS
+
+file='certinfo.ldif'
+pathfile='/worker/ldif'
+
+
+echo "dn: cn=config" > $pathfile/$file
+{
+    echo "add: olcTLSCACertificateFile"
+    echo "olcTLSCACertificateFile: /etc/ssl/certs/mycacert.pem"
+    echo "-"
+    echo "add: olcTLSCertificateFile"
+    echo "olcTLSCertificateFile: /etc/ldap/ldap01_slapd_cert.pem"
+    echo "-"
+    echo "add: olcTLSCertificateKeyFile"
+    echo "olcTLSCertificateKeyFile: /etc/ldap/ldap01_slapd_key.pem"
+}  >> $pathfile/$file
+
+ldapmodify -Y EXTERNAL -H ldapi:/// -f $pathfile/$file

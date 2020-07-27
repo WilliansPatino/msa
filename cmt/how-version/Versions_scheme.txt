@@ -1,0 +1,31 @@
+esquema de versiones
+
+mes			dia			serial #1	revision/time	serial #2
+-			--			---			---				---
+abril		22			1.4.22		11:38			1.4.22.1138
+			23			1.4.23
+			30			1.4.30
+
+mayo		1			1.5.1
+
+
+
+Nota:
+Si la codificacion se realiza actualmente, entonces 
+agregar la fecha de revision. Lo que conduce a un serial de 
+version adicional. 
+
+Este serial #2 permitira identificar al programa actualmente en
+fase de revision.  
+
+Por contrario, al terminar la codificacion se asigna el nombre 
+segun serial #1
+
+	ejemplo:  codigo terminado y listo para produccion el dia
+				28.4.2020
+
+				1.4.28
+
+
+
+

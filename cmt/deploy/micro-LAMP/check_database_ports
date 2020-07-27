@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# 26.05.2020, 9h06, by Willians Patiño,   ppwj@yahoo.com
+#
+#  to which ports the database manager will be published
+
+
+
+
+# domain='estudio.localdomain'
+
+# server_ip='192.168.250.2'
+
+# private_mysql_port='3306'
+
+# include_mariadb=$1
+# pub_dbaseprt=$2
+
+
+# which ports will be published
+if [ $pub_dbaseprt != '3306' ] && [ $pub_dbaseprt != '80' ]; then
+    echo "I guess we'll manage Database on a port other than 3306"
+    if  $include_mariadb; then
+        mysql_ports="-p $pub_dbaseprt:$private_mysql_port "   # HTTP / HTTPS
+        dbservices="$YELLOW mysql -h $server_ip -P $pub_dbaseprt -u root -p $RST "
+
+    else
+        mysql_ports="-p $pub_dbaseprt:$private_mysql_port"                      # HTTPS (default)
+        dbservices="$YELLOW mysql -h $server_ip -P $pub_dbaseprt -u root -p $RST "
+
+    fi
+elif [  $pub_dbaseprt == '80' ];  then
+      echo "Are you kidding?.. Please check your database ports inputs"
+      exit 1
+
+else
+    echo "I guess Mysql/3306 port is perfect for personal use"
+    if [  $pub_dbaseprt == '3306' ];  then
+        mysql_ports="-p $pub_dbaseprt:$private_mysql_port"                      # HTTPS (default)
+        dbservices="$YELLOW mysql -h $server_ip -P $pub_dbaseprt -u root -p $RST"
+    fi
+
+fi
+echo -e "$mysql_ports "
+echo -e "$dbservices"
+
+

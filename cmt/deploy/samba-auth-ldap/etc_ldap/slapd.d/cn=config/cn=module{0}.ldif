@@ -1,0 +1,14 @@
+# AUTO-GENERATED FILE - DO NOT EDIT!! Use ldapmodify.
+# CRC32 36a7dd9a
+dn: cn=module{0}
+objectClass: olcModuleList
+cn: module{0}
+olcModulePath: /usr/lib/ldap
+olcModuleLoad: {0}back_mdb
+structuralObjectClass: olcModuleList
+entryUUID: 88dbcc94-3647-103a-9f3c-35b6891c7684
+creatorsName: cn=config
+createTimestamp: 20200529222859Z
+entryCSN: 20200529222859.090208Z#000000#000#000000
+modifiersName: cn=config
+modifyTimestamp: 20200529222859Z

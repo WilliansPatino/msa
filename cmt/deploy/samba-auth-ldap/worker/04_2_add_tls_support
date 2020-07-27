@@ -1,0 +1,2 @@
+certtool --generate-privkey --bits 4096 \
+--outfile /etc/ssl/private/mycakey.pem

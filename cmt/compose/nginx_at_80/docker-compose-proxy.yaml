@@ -1,0 +1,32 @@
+nginx-proxy:
+    image: jwilder/nginx-proxy
+    restart: always
+    ports:
+        - "80:80"
+    volumes: 
+        - /var/run/docker.sock:/tmp/docker.sock:ro
+
+www:
+    image: nginx
+    restart: always
+    expose:
+        - "80"
+    
+    volumes:
+        - ~/_testing/nginx_at_80/www:/usr/share/nginx/html:ro
+    environment: 
+        - VIRTUAL_HOST=wpatino.local,www.wpatino.local
+
+www2:
+            image: nginx
+            restart: always
+            expose:
+                - "80"
+            
+            volumes:
+                - ~/_testing/nginx_at_80/www2:/usr/share/nginx/html:ro
+            environment: 
+                - VIRTUAL_HOST=testing.local,www.testing.local
+
+        # ports:
+        # - "80:80"

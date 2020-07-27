@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ldapdelete -r 'cn=admin,dc=grupojules,dc=com' -w

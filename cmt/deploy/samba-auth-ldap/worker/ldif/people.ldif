@@ -1,0 +1,8 @@
+dn: ou=people,dc=grupojules,dc=com
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=groups,dc=grupojules,dc=com
+objectClass: organizationalUnit
+ou: groups
+

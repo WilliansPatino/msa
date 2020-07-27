@@ -1,0 +1,20 @@
+dn: cn=visitas,ou=Groups,dc=grupojules,dc=com
+objectClass: posixGroup
+cn: visitas
+gidNumber: 5001
+
+dn: uid=visitante,ou=People,dc=grupojules,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: visitante
+sn: EJEMPLO
+givenName: Visitante
+cn: Visitante
+displayName: Visitante
+uidNumber: 100002
+gidNumber: 5001
+userPassword: {SSHA}9WV5GSepg49V2vipYg0tzHshg1FuCJ8k
+gecos: Visitante
+loginShell: /bin/bash
+homeDirectory: /home/visitante

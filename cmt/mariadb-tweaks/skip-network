@@ -1,0 +1,6 @@
+# add to my.cnf
+
+[mysqld]
+
+skip-networking=0
+skip-bind-address

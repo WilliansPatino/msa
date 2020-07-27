@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#createContainerLDAP () {
+    if $isTesting; then
+       echo -e "$ASTE Image: $image_uno, Container suggested name: $container_name"
+       echo -e "$STAR Container ports:  $ports"
+    
+    else
+        echo -e "$ASTE Docker image: $image_uno, Container suggested name: $container_name"
+
+        docker create --name $container_name \
+                -it \
+                     $volumes \
+                    $ports \
+                    $image
+   fi
+ 
+#}

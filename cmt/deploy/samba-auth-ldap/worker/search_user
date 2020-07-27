@@ -1,0 +1,5 @@
+#
+# search ldap user
+
+ldapsearch -x -LLL -b dc=grupojules,dc=com '(uid=$1)' cn gidNumber
+

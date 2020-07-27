@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+#  W.Patino,   24.06.2020,  9h25
+#
+# Zimbra Laboratory
+#
+#  Objetive: to deploy an authentication environment for NAS device
+
+container="zimbra-lab"
+
+IMAGE='griffinplus/zimbra'
+
+http="80:80"
+https="443:443"
+smtp="25:25"
+smpts="465:465"
+smtpsub="587:587"
+proxyadmin="9071:9071"
+mailbox="7071:7071"
+ldap="389:389"
+ldaps="636:636"
+imaps="993:993"
+
+# Zimbra Root
+opt="/deployments/zimbra/opt"
+
+# scripting tools
+worker="/deployments/zimbra/worker"
+
+ports="-p $http -p $https \
+-p $smtp -p $smpts \
+-p $smtpsub -p $proxyadmin \
+-p $mailbox -p $ldap -p $ldaps -p $imaps"
+
+volumes="-v $opt:/opt/zimbra \
+-v $worker:/root/worker"
+
+echo "Initiating Zimbra container..."
+echo -e "== Parameters ==
+* Container name: $container
+* Ports: $ports
+* Volumes: $volumes
+* Docker Image: $IMAGE"
+
+
+command=$(docker run -itd --name $container $ports $volumes  $IMAGE)
+
+# start/init 
+echo -e "$command"

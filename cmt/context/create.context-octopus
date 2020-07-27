@@ -1,0 +1,1 @@
+docker context create octopus --docker "host=ssh://wp@19x.x.x.x:99999"

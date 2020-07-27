@@ -1,0 +1,25 @@
+#!/bin/bash
+ 
+addVirtualHost() {
+
+      {
+        echo "# SSL - Programmed by Willians Patiño <ppwj@yahoo.com>"
+         >> $PWD/$file
+          echo "<VirtualHost *:443>"
+          echo "     SSLEngine on"
+          echo "     SSLCertificateFile /etc/ssl/$servercrt"
+          echo "     SSLCertificateKeyFile /etc/ssl/$serverkey"
+          echo "</VirtualHost>"
+      } >> $PWD/$file
+ 
+}
+container_name='CONTAINER_NAME'
+servercrt='file.crt'
+serverkey='file.key'
+file='00-default-ssl.conf'
+
+addVirtualHost
+
+
+
+

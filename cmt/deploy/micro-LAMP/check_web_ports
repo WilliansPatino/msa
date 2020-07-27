@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# 26.05.2020, 9h06, by Willians Patiño,   ppwj@yahoo.com
+#
+#  check the ports to be published the cms
+
+# isPublicHTTP=$1
+
+# pub_webport=$3
+
+
+# private_html_port="443"
+
+# alt_html_port="80:80"
+
+# include_ssl=$2
+
+# domain='estudio.localdomain'
+# server_ip='192.168.250.2'
+
+
+# which ports will be published
+if [ $pub_webport != '443' ] && [ $pub_webport != '80' ]; then
+    echo "I guess we'll use HTTPS on a port other than 443"
+    if $isPublicHTTP && $include_ssl; then
+        cms_ports="-p $pub_webport:$private_html_port -p $alt_html_port "   # HTTP / HTTPS
+        services="Local Access:  $GREEN http://$domain    $RST 
+        $GREEN http://$server_ip $RST
+        Public access: $GREEN https://$server_ip:$pub_webport $RST
+        $GREEN https://$domain:$pub_webport $RST"
+    elif ! $isPublicHTTP && $include_ssl; then
+        cms_ports="-p $pub_webport:$private_html_port"                      # only HTTPS 
+        services="Public access: $GREEN https://$server_ip:$pub_webport $RST
+        $GREEN https://$domain:$pub_webport $RST"
+    elif $isPublicHTTP && ! $include_ssl; then
+        cms_ports="-p $alt_html_port "                                      # only HTTP
+        services="Local Access:  $GREEN http://$domain    $RST 
+        $GREEN http://$server_ip $RST"
+    elif ! $isPublicHTTP && ! $include_ssl; then
+        cms_ports="-p $alt_html_port "                                      # only HTTP
+        services="Local Access:  $GREEN http://$domain    $RST 
+        $GREEN http://$server_ip $RST"
+    else
+        cms_ports="-p $pub_webport:$private_html_port"                      # HTTPS (default)
+        services="Public access: $GREEN https://$server_ip:$pub_webport $RST
+        $GREEN https://$domain:$pub_webport $RST"
+    fi
+elif [  $pub_webport == '80' ];  then
+      echo "Are you kidding?.. Please check your web ports inputs"
+      exit 1
+
+else
+    echo "I guess HTTPS is perfect for personal use!"
+    if [  $pub_webport == '443' ];  then
+        cms_ports="-p $pub_webport:$private_html_port"                      # HTTPS (default)
+        services="Public access: $GREEN https://$server_ip $RST
+        $GREEN https://$domain $RST"
+    fi
+fi
+echo -e "Port: $cms_ports"
+echo -e "Web links: $services"
+

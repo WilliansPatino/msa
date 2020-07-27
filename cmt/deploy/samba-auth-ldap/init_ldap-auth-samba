@@ -1,0 +1,100 @@
+#!/bin/bash
+
+
+basedir='/msa/cmt/deploy/samba-auth-ldap'
+
+image='willianspatino/ldap'
+
+isTesting=false
+
+container_name='ldap-auth-samba'
+
+# ldap ports
+ldap_ports='-p 389:389 -p 636:636'
+
+# ldap volumes
+extvol1="$basedir/etc_ldap/:/etc/ldap"
+extvol2="$basedir/var_lib_ldap/:/var/lib/ldap"
+
+
+# samba ports
+udp='-p 137:137/udp -p 138:138/udp'
+tcp='-p 139:139/tcp -p 445:445/tcp'
+samba_ports="$udp $tcp"
+
+# samba volumes
+extvol3="$basedir/etc_samba/:/etc/samba"
+
+# samba shares root
+shares_root='$basedir/shares:/shares'
+
+
+# scripts tools volumes (working area)
+worker="$basedir/worker:/worker"
+
+# global web administration
+web_ports='-p 8080:80'
+
+#  volumes and ports
+volumes="-v $extvol1 -v $extvol2 -v $extvol3 -v $worker"
+ports="$ldap_ports $samba_ports $web_ports"
+
+. $basedir/colors/setting
+
+. $basedir/createContainer
+
+#---- ldap directories - (0) apt install slapd ldap-utils 
+#                           apt-get install slapd ldap-utils db5.3-util
+#   /var/lib/ldap
+#   /etc/ldap
+
+#
+#                           (3)  slappasswd
+#   install slapd
+
+# get basic config
+
+
+# cmd=$(docker run -dit --name Clone -p 65530:80 willianspatino/wordpress)
+#     echo -e "$cmd"
+
+#docker run --name clone -v vol1:/etc/openldap -dit willianspatino/ldap
+#docker cp  Clone:/etc/apache2 /tmp/
+
+# adding record sample
+#ldapadd -x -D cn=admin,dc=grupojules,dc=com -W -f willians.ldif
+
+# ldap query sample
+#ldapsearch -x -LLL -b dc=grupojules,dc=com 'uid=willians' cn gidNumber
+
+# restart ldap server from outside
+# docker restart ldap0
+# docker exec -it ldap0 service slapd restart
+
+# examples
+# 
+# # docker create \
+#   --name=ldap-auth \
+#   -e TZ=Europe/London \
+#   -p 8888:8888 \
+#   -p 9000:9000 \
+#   --restart unless-stopped \
+#   linuxserver/ldap-auth
+
+
+# commands logs
+
+#  18:21, 29.05.2020
+
+#  dointoserver :        docker exec -it ldap-auth-samba "$@"
+
+# ./dointoserver bash worker/00_install-ldap 
+
+# dpkg-reconfigure slapd
+#                         
+#   no, add Domain, Corporation, MDB, no, yes
+
+
+# add samba schema
+# ./ldap_bash ldapadd -Q -Y EXTERNAL -H ldapi:/// -f worker/samba.ldif 
+

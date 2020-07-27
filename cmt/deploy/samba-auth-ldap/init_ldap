@@ -1,0 +1,70 @@
+#!/bin/bash
+
+
+basedir='/msa/cmt/deploy/samba-auth-ldap'
+
+image_uno='willianspatino/ldap'
+
+isTesting=false
+
+container_name='ldap-auth-samba'
+
+ports='-p 389:389 -p 80:80'
+
+ext_vol_1="$basedir/etc_ldap/"
+int_vol_1='/etc/ldap'
+
+ext_vol_2="$basedir/var_lib_ldap/"
+int_vol_2='/var/lib/ldap'
+
+worker="$basedir/worker:/worker"
+
+volumes="-v $ext_vol_1:$int_vol_1 -v $ext_vol_2:$int_vol_2 -v $worker"
+
+#---- ldap directories - (0) apt install slapd ldap-utils 
+#                           apt-get install slapd ldap-utils db5.3-util
+#   /var/lib/ldap
+#   /etc/ldap
+#                         (1) dpkg-reconfigure slapd
+#   no, add Domain, Corporation, MDB, no, yes
+#
+#                           (3)  slappasswd
+#   install slapd
+
+# get basic config
+
+. $basedir/colors/setting
+
+. $basedir/createContainerLDAP
+
+# cmd=$(docker run -dit --name Clone -p 65530:80 willianspatino/wordpress)
+#     echo -e "$cmd"
+
+#docker run --name clone -v vol1:/etc/openldap -dit willianspatino/ldap
+#docker cp  Clone:/etc/apache2 /tmp/
+
+# adding record sample
+#ldapadd -x -D cn=admin,dc=grupojules,dc=com -W -f willians.ldif
+
+# ldap query sample
+#ldapsearch -x -LLL -b dc=grupojules,dc=com 'uid=willians' cn gidNumber
+
+# restart ldap server from outside
+# docker restart ldap0
+# docker exec -it ldap0 service slapd restart
+
+# examples
+# 
+# # docker create \
+#   --name=ldap-auth \
+#   -e TZ=Europe/London \
+#   -p 8888:8888 \
+#   -p 9000:9000 \
+#   --restart unless-stopped \
+#   linuxserver/ldap-auth
+
+
+# commands 
+# add samba schema
+# ./ldap_bash ldapadd -Q -Y EXTERNAL -H ldapi:/// -f worker/samba.ldif 
+

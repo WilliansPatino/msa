@@ -1,0 +1,24 @@
+#!/bin/bash
+
+
+
+
+
+
+
+file='ldap01.info'
+pathfile='/etc/ssl'
+
+echo "# SSL info " > $pathfile/$file
+    {
+        echo "# Programmed by Willians Patiño <ppwj@yahoo.com> as microservices"
+        echo "organization = Grupo Jules"
+        echo "cn = ldap01.grupojules.com"
+        echo "tls_www_server"
+        echo "encryption_key"
+        echo "signing_key"
+        echo "expiration_days = 3650"
+    } >> $pathfile/$file
+
+#    echo "  # Programmed by Willians Patiño <ppwj@yahoo.com> as microservices"
+#  >> $pathfile/$file

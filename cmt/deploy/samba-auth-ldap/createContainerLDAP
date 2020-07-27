@@ -1,0 +1,31 @@
+#!/bin/bash
+
+hey='a'
+
+#createContainerLDAP () {
+    if $isTesting; then
+       echo -e "$ASTE Image: $image_uno, Container suggested name: $container_name"
+       echo -e "$STAR Container ports:  $ports"
+    
+    else
+        echo -e "$ASTE Docker image: $image_uno, Container suggested name: $container_name"
+
+        docker create --name ldap-auth \
+                -it \
+                     $volumes \
+                    $ports \
+                    $image_uno
+   fi
+ 
+#}
+#               --restart unless-stopped \
+#               docker run --name $container_name \ <- replace 
+#               -it \   <-- replaced by --restart unless-stopped \
+
+# # docker create \
+#   --name=ldap-auth \
+#   -e TZ=Europe/London \
+#   -p 8888:8888 \
+#   -p 9000:9000 \
+#   --restart unless-stopped \
+#   linuxserver/ldap-auth

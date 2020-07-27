@@ -1,0 +1,849 @@
+#!/bin/bash
+# W.Patino, 10.4.2020, 20h21
+SysAdmin="ppwj@yahoo.com"
+#
+#   --- Generador de container para Wordpress + MariaDB ---
+#
+#  CHANGESLOG
+#
+#   - 13.4.2020   	+ Modificacion del código para automatizar tareas.
+#   - 14.4.2020   	+ Parametrizacion de puerto, nombre del 
+#                 	  contrainer,etc
+#   - 15.4.2020   	+ Inclusión de SSL/Apache, volumen de config y html,
+#   - 18.4.2020   	+ Mas validacion
+#   - 20.04.      	+ Re-escribir codigo
+#   - 22.02.      	+ Inclusión de SSL en apache, mas verbose 
+#                 	+ Simplificar el còdigo; usar funciones, argumentos
+#                  	  desde consola
+#   - 09.05.2020	+ Ajustar menu de opciones, agregar validaciones
+#
+#   - 10.05.2020  	Uso de Git para registrar versiones  ;)                 
+#   
+
+####  clear && echo -e " $(basename "$0") " 
+
+# a little bit visual
+GREEN="\e[32m"
+RED="\e[31m"
+CYAN="\e[35m"
+RST="\e[0m"
+RESALT="\e[41m"
+BLINK="\e[5m"
+BLUE="\e[34m"
+LYEL="\e[93m"
+LGRE="\e[92m"
+ASTE="$GREEN*$RST"
+ERRO="$BLINK$RESALT ERROR $RST"
+WARN="$BLINK$LYEL WARNING $RST"
+INFO="$LGRE INFO $RST"
+
+#------    G L O B A L    E N V I R O N M E N T -----------------------
+# IP del servidor docker
+server_ip="10.42.0.1"	##  PENDIENTE, obtener la IP por si mismo
+
+container_name="TESTING"     # parametro del usuario
+
+domain="localhost.localdomain"    # parametro del usuario
+OPTdomain="$domain.localdomain"
+
+
+pub_web_prt="8080"        # parametro del usuario, HTTP/HTTPS
+pub_db_prt="33806"       # parametro del usuario, mysql access
+
+dbpass="mCn@80wp"               # CMS/Wordpress mysql password
+root_pass="mCn@33db"            # MariaDB root admin password
+ 
+include_ssl=true               # parámetro del usuario
+#                               Se recomienda incluir SSL en entorno
+#				Web público. De lo contrario, podria
+#				no ser necesario si trabaja dentro de la 
+#				red local o privada.
+
+recreateCerts=false
+
+# entorno principal de los microservicios
+msrv_path="/msa"
+
+#  Container Management Tools / CMT  - Base
+CMT="$msrv_path/cmt"
+
+# directorio base de Container Deployments 
+###DEPLOY="$msrv_path/dep"     # mudado a la raiz, a fin de separar del CMT
+DEPLOY="/deployments"
+
+
+# gestion de containers (init, stop, remove)
+TOOLS="$DEPLOY/manage"
+
+
+#-- Wordpress environment configuration; docker image, ports, users
+int_apacheConf_dir="/etc/apache2"
+html_dir="wpress"
+apache_conf="apache2"
+certs="certs"
+private_html_port="443"
+dbuser="wp4dmin"
+###dbpass="min#4dor"                # parámetro del usuario
+dbname=$container_name              # "wordpress"
+wordpress_image="willianspatino/wordpress"
+apache2Conf_file="$apache_conf/apache2.conf"
+defaultSSLConf_file="sites-available/default-ssl.conf"
+defaultVirtualHostConf_file="sites-available/000-default.conf"
+
+#-- MariaDB environmento configuration; image, users, ports..
+db_config="dbacnf"
+data_dir="database"
+private_mysql_port="3306"
+##root_pass="m1nr00t"          # parámetro del usuario
+mariadb_image="willianspatino/mariadb"
+
+# Incluye mariadb
+include_mariadb=true   # true or false
+
+# Incluye html as default for wordpress
+include_wordpress=true
+
+#-- httpd/Apache parameters to change
+SSLCertificateFile="server.crt"
+SSLCertificateKeyFile="server.key"
+
+
+#-- SSL base config & SSL Certs destination 
+SSLDIR="$CMT/ssl"
+CONFIGFILE="$CMT/create-ssl/openssl.conf"
+
+#---------------------- END  GLOBAL ENVIRONMENT ------------------------
+
+#-				IDENTIFICATION	DIVISION							    -
+
+identifyContainers() {
+    
+	#::: CONTAINER NAME assign container name according the parameters
+    
+    # wordpress
+    wordpress_container_tag="w"$pub_web_prt
+    wordpress_container_name=$container_name$wordpress_container_tag
+    echo -e "$GREEN**$RST Container Wordpress: $wordpress_container_name"
+
+    # mariadb
+    mysql_container_tag="m"$pub_db_prt
+    mysql_container_name=$container_name$mysql_container_tag
+    echo -e "$GREEN**$RST Container MariaDB: $mysql_container_name"
+
+
+    #---- Assing the final name according the containers above ----
+    container_name=$container_name'_'$wordpress_container_tag$mysql_container_tag
+    container_dir=$DEPLOY/$container_name
+    echo -e "$GREEN**$RST Directorio base: $container_dir"
+
+} # END IDENTIFICATION DIVISION 
+
+
+
+#-------------------------- M E N U -----------------------------------
+#
+force_installation=false	# Elimina totalmente toda la info/data
+
+helpFunction () {
+   echo -e "$usage\n"
+   exit 1 # Exit script after printing help
+}
+
+parametersEmpty () {
+   #echo "Some or all of the parameters are empty";
+   echo -e "$(basename "$0"): 
+\e[35m  Algún o todos los parámetros están vacíos\e[0m  -h Help";
+   exit 1
+}
+
+usage="\e[32m$(basename "$0")
+v2.05.1 (2020.05.10, 11h14) by W.Patiño <ppwj@yahoo.com> || Versión monolítica \e[0m
+
+  Uso:  [ OPCIONES] -h   
+
+Crear container LAMP basado en Apache,MariaDB y Wordpress.
+
+  -h                 Muestra este texto de ayuda
+  -t                 Modo TESTING   (true or false)    
+  -n  container      Nombre del container (default: ${container_name})
+  -d  dominio        Dominio de internet  (default:  $domain)
+  -i  ip address     IP del servidor hosting (default: $server_ip)
+  -w  puerto         Puerto público para Wordpress (default: $pub_web_prt)  
+  -m  puerto         Puerto público para MariaDB   (default: $pub_db_prt)
+  -U                 MariaDB usuario Wordpress  (default: $dbpass)
+  -R                 MariaDB root admin password (default: $root_pass)
+  -S                 Iniciar WebServer con HTTPS/SSL (default: $include_ssl)
+  -F                 Forzar reinstalación    (default: false)
+  -C                 Forzar re-creación de certificados    (default: $recreateCerts)
+"
+while getopts n:d:i:t:w:m:U:R:S:F:C:h option; do
+case "${option}" in
+     n) container_name=${OPTARG};;
+     d) domain=${OPTARG};;
+     i) server_ip=${OPTARG};;
+     t) isTesting=${OPTARG};;
+     w) pub_web_prt=${OPTARG};;
+     m) pub_db_prt=${OPTARG};;
+     U) dbpass=${OPTARG};;
+     R) root_pass=${OPTARG};;
+     S) include_ssl=${OPTARG};;
+     F) force_installation=${OPTARG};;
+     C) recreateCerts=${OPTARG};;
+     h) helpFunction;;
+     :) printf "illegal" $OPTARG >&2    
+     echo -e $usage >&2;;
+esac
+done
+
+
+if [ "$force_installation" == true ]; then
+	
+	identifyContainers
+   
+   	echo -e "[$RESALT FORCE REINSTALL $RST] $WARN"
+	
+	echo -e "$ASTE Shutdown containers..."
+	msg=$(docker stop $wordpress_container_name)
+    echo -e "$msg"
+	msg=$(docker stop $mysql_container_name)
+    echo -e "$msg"
+
+	echo -e "$ASTE Removing containers..."
+	msg=$(docker rm $wordpress_container_name)
+    echo -e "$msg"
+	msg=$(docker rm $mysql_container_name)
+    echo -e "$msg"
+
+	if [ -d $container_dir ]; then
+		echo -e "Removing directory..."
+		sudo rm -rf $container_dir
+		echo -e "[$RESALT DELETED $RST] $container_dir"
+    
+		echo -e "Removing directory has failed, try to remove manually"
+		echo -e "   rm -rf $container_dir"
+	else
+		echo -e "Container base directory not found!"
+   	fi
+	echo -e "$INFO If you wish, try to create it again, excluding -F true "
+
+	if [ -f $TOOLS/start-$container_name ]; then
+		rm  $TOOLS/start-$container_name
+		rm  $TOOLS/stop-$container_name
+		rm  $TOOLS/remove-$container_name
+		rm  $TOOLS/restart-$container_name
+		rm  $TOOLS/info-$container_name
+	fi 
+	
+    exit 1
+fi
+
+
+
+
+# valida argumentos
+if [ -z "$container_name" ] || [ -z "$domain" ] || [ -z "$server_ip" ] \
+	|| [ -z "$pub_web_prt" ]  || [ -z "$pub_db_prt" ] \
+	|| [ -z "$dbpass" ] || [ -z "$root_pass" ] || [ -z "$isTesting" ] \
+	|| [ -z "$include_ssl" ];
+then
+  parametersEmpty
+fi
+
+if [ "$isTesting" == true ]
+then
+  echo -e "$RESALT TESTING $RST"
+elif [ "$isTesting" == false ]
+then
+  echo -e "$GREEN*$RST Initiating container"
+else
+  echo "What are you doing?" 
+  exit 1
+fi
+#----------------------  END OF M E N U -------------------------------
+
+
+showContainerInfo () {
+    echo -e "\n=== General info ==="
+    if [ "$isTesting" == true ]; then echo -e "Mode: [$BLINK$RESALT" TESTING "$RST]"; fi  
+    if [ "$isTesting" == false ]; then echo -e "Mode: [$GREEN REAL $RST]"; fi  
+    echo -e "Container name: $GREEN $container_name $RST"
+    echo -e "Domain: $GREEN $domain $RST"
+    echo -e "Server IP: $GREEN  $server_ip $RST"
+    echo -e "Local Access: $GREEN http://$domain    $RST "
+	echo -e "              $GREEN http://$server_ip $RST"
+    if [ $include_ssl == true ]; then 
+       echo -e "Public access/HTTPS: $GREEN https://$server_ip:$pub_web_prt $RST"
+       echo -e "					 $GREEN https://$domain:$pub_web_prt $RST"
+    fi
+    echo -e "MariaDB Admin access port: $GREEN  $pub_db_prt $RST"
+    echo -e "Database Wordpress username: $GREEN $dbuser $RST" 
+    echo -e "              User password: $GREEN $dbpass $RST" 
+    echo -e "MariaDB root admin password: $GREEN  $root_pass $RST"
+    echo -e "Mysql admin access: $CYAN mysql -h $server_ip -P $pub_db_prt -u root -p $RST"
+    echo -e "Database name: $CYAN $dbname $RST"
+
+   	if [ "$isTesting" == false ]; then
+   		saveContainerInfo
+	fi
+   
+} 
+
+saveContainerInfo() {
+	echo "#!/bin/bash" > $TOOLS/info-$container_name
+
+	{
+		echo "# programmed by Willians Patiño <ppwj@yahoo.com>"
+		>> $TOOLS/info-$container_name
+	    echo " "
+		echo "GREEN=\"\e[32m\""
+        echo "CYAN=\"\e[35m\""
+ 	    echo "RST=\"\e[0m\""
+		echo  "echo -e \"$GREEN === General info === $RST \""
+		echo  " "
+    	echo  "echo -e \"Container name:$GREEN  $container_name   $RST\""
+    	echo  "echo -e \"Domain: $GREEN  $domain   $RST\""
+    	echo  "echo -e \"Server IP:$GREEN   $server_ip $RST  \""
+    	echo  "echo -e \"Local access: $GREEN http://$domain $RST \""
+		echo  "echo -e \"             $GREEN http://$server_ip  $RST\""
+		echo  "echo -e \"Public access/HTTPS:$GREEN https://$server_ip:$pub_web_prt $RST\""
+		echo  "echo -e \"                    $GREEN https://$domain:$pub_web_prt $RST\""
+    	echo  "echo -e \"MariaDB Admin access port:$GREEN $pub_db_prt  $RST \""
+    	echo  "echo -e \"Database Wordpress Username:$GREEN $dbuser $RST\""
+    	echo  "echo -e \"              User password:$GREEN $dbpass $RST \""
+    	echo  "echo -e \"MariaDB root admin password:$GREEN $root_pass  $RST \""
+    	echo  "echo -e \"Mysql access:$CYAN mysql -h $server_ip -P $pub_db_prt -u root -p	$RST \""
+    	echo  "echo -e \"Database name:$GREEN  $dbname $RST \""
+		echo  " "
+	} >> $TOOLS/info-$container_name
+	echo -e "Info file: $GREEN $TOOLS/info-$container_name $RST "
+
+	 msg=$(chmod ug+x $TOOLS/info-$container_name)
+     echo -e "$msg"
+
+}
+
+
+#-- according parameters given o not, can changes
+dbname=$container_name              # "wordpress"
+
+if $include_ssl; then
+     private_html_port="443"
+     alt_private_html_port="80"
+else
+     alt_private_html_port="80"
+     private_html_port="80"
+fi
+
+##3apacheBaseDir="$DEPLOY/$container_name/$apache_conf"
+
+
+#-- SSL Certificates to include
+servercrt="$domain.crt"
+serverkey="$domain.key"
+validity="1800"
+#---- 
+
+cloneConfigApache2 () {
+	echo -e "$GREEN*$RST Mounting image..."
+	cmd=$(docker run -dit --name Clone -p 65530:80 willianspatino/wordpress)
+	echo -e "$cmd"
+	echo -e "$GREEN * $RST Copying... "
+	docker cp  Clone:/etc/apache2 /tmp/
+    #echo -e"$cmd"
+    cmd=$(docker stop Clone)
+	echo -e "$cmd"
+	echo -e "$GREEN*$RST Removing temporary image..."
+	cmd=$(docker rm Clone)
+	echo -e "$cmd"
+	echo -e "[$BLINK $RED Apache config was imported $RST ] "
+}
+
+addMainApache2Config () {
+
+	# defaultSSLConf_file="sites-available/default-ssl.conf"
+    # defaultVirtualHostConf_file="sites-available/000-default.conf"
+
+
+#ELIMINAR  if [ ! -d $apacheBaseDir ] && \
+#ELIMINAR	[ ! -f $apacheBaseDir/$defaultSSLConf_file ] && \
+#ELIM	[ ! -f $apacheBaseDir/$defaultVirtualHostConf_file ]; then
+     cloneConfigApache2  # unless exits HTTP config, get it.
+#ELIM  fi 
+    
+    #copiar config base para Apache
+    cmd=$(rsync -a  /tmp/apache2/* $container_dir/$apache_conf/)
+	echo -e "$cmd"
+    echo -e "Config imported into $apacheBaseDir"
+	echo -e "$GREEN*$RST Removing temporary files..."
+}
+
+updateSSLCertsIntoFiles () {
+    #  Actualizar el certificado SSL y su ruta
+   if $isTesting; then
+        echo -e "[testing] Config default-ssl.conf"
+  else
+      #sudo sed -i \
+      #-e "s/$SSLCertificateFile/$servercrt/g" \
+      #-e "s/$SSLCertificateKeyFile/$serverkey/g" \
+
+      echo "# programmed by Willians Patiño <ppwj@yahoo.com>" \
+	>> $container_dir/$apache_conf/$defaultSSLConf_file
+      echo "SSLCertificateFile    /etc/ssl/$servercrt" \
+	>> $container_dir/$apache_conf/$defaultSSLConf_file
+
+      echo "SSLCertificateKeyFile /etc/ssl/$serverkey" \
+	>> $container_dir/$apache_conf/$defaultSSLConf_file
+  fi
+}
+ 
+putCertsIntoContainer() { 
+  if $isTesting; then
+     echo -e "[testing] Copiar certificados del servidor web"
+     echo -e "$SSLDIR/$servercrt --> $container_dir/$apache_conf"
+     echo -e "$SSLDIR/$serverkey --> $container_dir/$apache_conf\n"
+  else
+      sudo cp $SSLDIR/$servercrt $container_dir/$certs/
+      sudo cp $SSLDIR/$serverkey $container_dir/$certs/
+ fi
+}
+
+# para otra version de apache no Wordpress
+configHTTPDconf () {
+     # REF: /etc/apache2/ ?????
+     if $isTesting; then
+        echo -e "[testing] Ajustar  httpd.conf"
+        echo -e "\t$container_dir/$apache_conf/conf/httpd.conf\n"
+     else
+      sudo sed -i \
+        -e 's/^#\(Include .*httpd-ssl.conf\)/\1/' \
+        -e 's/^#\(LoadModule .*mod_ssl.so\)/\1/' \
+        -e 's/^#\(LoadModule .*mod_socache_shmcb.so\)/\1/' \
+       $container_dir/$apache_conf/apache2.conf
+
+	   # ServerAdmin
+	   sudo sed -i \
+	   -e "s/^ServerAdmin *.com/ServerAdmin $SysAdmin/g" \
+	   $container_dir/$apache_conf/apache2.conf
+     fi
+}
+
+activeSSL () {
+
+        # check SSL certs availability
+        createSSLCertificates
+		
+ 
+	# Change hostname ServerName - httpd.conf
+	if $isTesting; then
+	   echo -e "[testing] Ajustar SSL Config "
+	else
+	   #sudo sed -i  \
+	   #    -e "s/^#ServerName *.com/ServerName $server_ip/g" \
+	   #    $container_dir/$apache2Conf_file    
+
+	   # ServerName 
+	   # sudo sed -i \
+	   #-e "s/^ServerName *.com/ServerName $server_ip/g" \
+	   #$container_dir/$apache_conf/conf/extra/httpd-ssl.conf
+
+		
+	   # ServerAdmin
+	   sudo sed -i \
+	   -e "s/ServerAdmin */ServerAdmin $SysAdmin/g" \
+	   $container_dir/$apache_conf/$defaultSSLConf_file
+
+       # default-ssl.conf
+	   #sed -i -e '/SSLCertificateKeyFile/ s/^#*/#/' \
+		#$container_dir/$apache_conf/$defaultSSLConf_file
+
+ 	   #sed -i -e '/SSLCertificateFile/ s/^#*/#/' \
+		#$container_dir/$apache_conf/$defaultSSLConf_file
+                                                   
+ 		# update SSL Certs pathfile
+		putCertsIntoContainer
+		#generateVirtualHostFile
+
+		#updateSSLCertsIntoFiles 
+		###addVirtualHost ##
+	fi
+}
+
+startSSLpostInstall() {
+
+		# Do some changes before try start HTTPS
+        echo -e "Starting SSL... "
+		com=$(docker exec -it $wordpress_container_name a2enmod ssl)
+		echo "$com"
+
+		
+		generateVirtualHostFile
+		echo -e "Virtual Host created for $domain"
+
+		
+		echo -e "Reloading Apache config..."
+		com=$(docker exec -it $wordpress_container_name service apache2 reload)
+		echo -e "$com"
+
+        com=$(docker exec -it $wordpress_container_name a2ensite $domain)
+		echo -e "$com"
+		
+		echo -e "Enable SSL module Apache"
+		com=$(docker exec -it $wordpress_container_name service apache2 restart)
+		echo -e "$com"
+		echo -e "Restarting Apache..."
+		#$TOOLS/restart-$container_name
+		
+}
+
+generateVirtualHostFile() {
+
+    echo "<VirtualHost *:443>" > $container_dir/$certs/$domain.conf
+
+    {
+    	echo "	# Programmed by Willians Patiño <ppwj@yahoo.com> as microservices"
+         >> $container_dir/$certs/$domain.conf
+      	echo "	ServerAdmin $SysAdmin"
+		echo "	ServerName  $domain"
+		echo "	ServerAlias	$server_ip"
+		echo " "
+		echo "	DocumentRoot	/var/www/html"
+		echo " "
+		echo "	SSLEngine on"
+		echo "	SSLCertificateFile 		/etc/ssl/$servercrt"
+		echo "	SSLCertificateKeyFile 	/etc/ssl/$serverkey"
+		echo "</VirtualHost>"
+     } >> $container_dir/$certs/$domain.conf
+     echo -e "Created virtual host ... $domain.conf"
+
+	 cp $container_dir/$certs/$domain.conf \
+		$container_dir/$apache_conf/sites-available/
+}
+
+
+addVirtualHost() {
+
+     {
+       sudo echo "# SSL - Programmed by Willians Patiño <ppwj@yahoo.com>"
+	 >> $container_dir/$apache_conf/$virtualhost_pathfile
+         echo "<VirtualHost *:443>"
+	 echo "     SSLEngine on"
+   	 echo "     SSLCertificateFile /etc/ssl/$servercrt"
+   	 echo "     SSLCertificateKeyFile /etc/ssl/$serverkey"
+ 	 echo "</VirtualHost>"
+     } >> $container_dir/$apache_conf/$defaultVirtualHostConf_file
+
+	echo -e "[$GREEN$BLINK Active SSL $RST] 
+	     $container_dir/$apache_conf/$defaultVirtualHostConf_file "
+
+}
+
+
+createContainerTools () {
+      #-- do easy administratio for the container; stop, start, remove
+     echo -e "Container tools dir: $TOOLS"
+     
+     if $isTesting; then
+        echo -e "[testing] $CYAN Herramientas para el container $RST"
+        echo -e "\t$GREEN $TOOLS/start-$container_name $RST"
+        echo -e "\t$GREEN $TOOLS/stop-$container_name $RST"
+        echo -e "\t$GREEN $TOOLS/remove-$container_name $RST"
+    else
+         if [  ! -d $TOOLS ]; then
+          	msg=`mkdir -p $TOOLS`
+          	echo -e "$msg"
+          	echo -e "[NUEVO] $TOOLS"
+         fi
+	echo "#!/bin/bash" > $TOOLS/start-$container_name
+	echo "#!/bin/bash" > $TOOLS/stop-$container_name
+	echo "#!/bin/bash" > $TOOLS/remove-$container_name
+	echo "#!/bin/bash" > $TOOLS/restart-$container_name
+
+        {
+        echo "# programmed by Willians Patiño <ppwj@yahoo.com>"
+	>> $TOOLS/start-$container_name
+	  echo "echo 'Starting container instances '"
+          echo "docker start $wordpress_container_name"
+          echo "docker start $mysql_container_name"
+        } >> $TOOLS/start-$container_name
+
+        {
+
+        echo "# programmed by Willians Patiño <ppwj@yahoo.com>"
+	>> $TOOLS/stop-$container_name
+	  echo "echo 'Halt container instances' "
+          echo "docker stop $wordpress_container_name"
+          echo "docker stop $mysql_container_name"
+        } >> $TOOLS/stop-$container_name
+
+        {
+        echo "# programmed by Willians Patiño <ppwj@yahoo.com>"
+	>> $TOOLS/remove-$container_name
+          echo "echo 'Shutdown containers' "
+          echo "docker stop $wordpress_container_name"
+          echo "docker stop $mysql_container_name"
+          echo "echo 'Remover containers' "
+          echo "docker rm $wordpress_container_name"
+          echo "docker rm $mysql_container_name"
+        } >> $TOOLS/remove-$container_name
+
+	# restart
+        {
+        echo "# programmed by Willians Patiño <ppwj@yahoo.com>"
+	>> $TOOLS/restart-$container_name
+          echo "$TOOLS/stop-$container_name"
+          echo "$TOOLS/start-$container_name"
+        } >> $TOOLS/restart-$container_name
+
+        # executable tools
+        msg=$(chmod ug+x $TOOLS/*-$container_name)
+        echo -e "$msg"
+        echo -e "[Assigned execution rights] - Container tools"
+    fi
+}
+
+createContainerMainDir () {
+    # create base dir for container
+	if $isTesting; then
+			echo -e "[$BLINK $CYAN Testing $RST] creation of new directory"
+    else
+        if [  ! -d "$container_dir" ]; then
+            mkdir -p $container_dir
+            echo -e "[$GREEN NUEVO] $RST ] Directorio base: $container_dir"
+		else 
+			echo -e "$RED***$RST Directory found, try with a Force re-install"
+        fi
+    fi
+	echo -e "$GREEN*$RST Directorio base: $container_dir"
+}
+
+createWordpressDataPersistence () {
+
+    if $isTesting; then
+        echo -e "[testing] Creando persistencia para Wordpress"
+        echo -e "\t$container_dir/$html_dir"
+        echo -e "\t$container_dir/$apache_conf"
+        echo -e "\t$container_dir/$certs\n"  
+       
+    else
+        echo -e "Creando persistencia para Wordpress"	
+     
+        echo -e "Creado: $container_dir/$html_dir"
+        mkdir -p $container_dir/$html_dir
+
+        echo -e "Creado: $container_dir/$apache_conf"
+        mkdir -p $container_dir/$apache_conf 
+  
+        echo -e "Creado: $container_dir/$certs"  
+        mkdir -p $container_dir/$certs
+
+   fi 
+}
+    
+
+createWordpressContainer () {
+    if $isTesting; then
+        echo -e "[testing] Creando container Wordpress: $wordpress_container_name"
+          echo -e "\tImagen: $wordpress_image \n"
+          
+    else
+        echo "Creando container $wordpress_container_name"
+        echo -e "\tImage: $wordpress_image >"
+    
+        docker run --name "$wordpress_container_name" \
+        -p $pub_web_prt:$private_html_port \
+        -v $container_dir/$html_dir:/var/www/html/ \
+        -v $container_dir/$certs:/etc/ssl/ \
+        -v $container_dir/$apache_conf:$int_apacheConf_dir \
+        -e WORDPRESS_DB_HOST=$server_ip:$pub_db_prt \
+        -e WORDPRESS_DB_USER=$dbuser \
+        -e WORDPRESS_DB_PASSWORD=$dbpass \
+        -e WORDPRESS_DB_NAME=$dbname \
+        -d $wordpress_image
+   fi
+ 
+        #-v $container_dir/$apache_conf:$int_apacheConf_dir \
+        # -p "80:80" \
+
+        # -p $pub_web_prt:80 \
+
+        #-p "80:80" \
+}
+
+createMariaDBDataPersistence () {
+    if $isTesting; then
+        echo -e "[testing] Creando persistencia para MariaDB"
+        echo -e "\t$container_dir/$db_config"
+        echo -e "\t$container_dir/$data_dir\n"
+    else
+        
+        echo -e "Creando persistencia para MariaDB"
+        echo -e "$container_dir/$db_config"
+        mkdir -p $container_dir/$db_config 
+        rsync -a $CMT/etc/mysql/* $container_dir/$db_config/
+
+        echo -e "$container_dir/$data_dir"
+        mkdir -p $container_dir/$data_dir
+    fi  
+}
+
+createMariaDBContainer () {
+    if $isTesting; then
+        echo -e "[testing] Creando container de MariaDB: $mysql_container_name"
+        echo -e "\tImagen: $mariadb_image \n"
+    else
+        echo "Creando container $mysql_container_name"
+        echo -e "\tImage: $mariadb_image\n "
+
+        docker run --name "$mysql_container_name" \
+        -p $pub_db_prt:$private_mysql_port \
+        -v $container_dir/$db_config:/etc/mysql/ \
+        -v $container_dir/$data_dir:/var/lib/mysql/ \
+        -e MYSQL_ROOT_PASSWORD=$root_pass \
+        -e MYSQL_USER=$dbuser \
+        -e MYSQL_PASSWORD=$dbpass \
+        -e MYSQL_DATABASE=$dbname \
+        -d $mariadb_image
+    fi
+}
+
+showInternalContainerInfo () {
+    tree -L 2 $container_dir
+    echo -e "Container $wordpress_container_name"
+    echo -e " $mysql_container_name"
+
+}
+
+createSSLCertificates() {
+
+	
+    if [ -f "$container_dir/$certs/$servercrt" ] || \
+			   [ -f "$container_dir/$certs/$serverkey" ]; then
+                echo -e "[$GREEN SSL Certs found.! $RST]"
+    fi 
+        
+	if [ "$isTesting" == true ]; then
+            echo -e "Crear certificados SSL"
+            echo -e "$RESALT TESTING $RST [ $SSLDIR ] $serverkey / $servercrt "
+        else
+            verifyCertsBeforeCreateIt
+    fi
+}
+
+verifyCertsBeforeCreateIt() {
+
+		if $recreateCerts; then
+
+			createCerts
+
+		else
+        
+        	if [ -f "$container_dir/$certs/$servercrt" ] || \
+			   [ -f "$container_dir/$certs/$serverkey" ]; then
+                echo -e "[$GREEN SSL Certs found.! $RST]"
+         	else 
+            
+            	echo -e "[$RESALT ALERT $RST] SSL Certificates not found!"
+            	createCerts
+         	fi
+		fi
+ }
+
+ createCerts() {
+            # create SSL certificates
+            msg=$(sudo openssl req -config $CONFIGFILE -x509 \
+			-nodes -days $validity -newkey \
+            rsa:2048 -keyout $SSLDIR/$serverkey \
+               	-out $SSLDIR/$servercrt)
+            echo -e "$msg"
+            echo -e "$ASTE [$SSLDIR] $serverkey $servercrt "
+            
+            # Readable 
+            msg=$(sudo chmod 644 $SSLDIR/$servercrt $SSLDIR/$serverkey)
+            echo "$msg"
+            #ELIMINARmsg=$(ls -lpa $SSLDIR/$domain.*)
+            #ELIMINARecho -e "$msg\n"
+    # Change: rsa:8192  to rsa:2048
+	# 	sudo openssl req -x509 -nodes -newkey rsa:2048 \
+	#		-keyout example.com.key -out example.com.crt
+
+ }        
+
+#---				 MAIN 
+
+	identifyContainers
+
+	# Already installed ?
+
+   	if [ -d $container_dir ]; then
+    	echo -e "[$WARN Container already exits --> $container_name"
+      	echo -e "[BASE] $container_dir"
+      	echo -e "[Herramientas rápidas]"
+      	echo -e "\t\t$GREEN $TOOLS/start-$container_name $RST"
+      	echo -e "\t\t$GREEN $TOOLS/stop-$container_name $RST"
+      	echo -e "\t\t$GREEN $TOOLS/remove-$container_name $RST"
+      	echo -e "\t\t$GREEN $TOOLS/info-$container_name $RST"
+      	echo -e "\nPuede forzar una reinstalación"
+      	echo -e "\t\t incluya el parámetros:  -F true"
+		echo -e "$INFO Watch the network ports, by using" 
+        echo netstat -tnlp |egrep -i (8090|3390)-e "\t$LYEL netstat -tnlp |egrep -i \"($pub_web_prt|$pub_db_prt)\" $RST"
+
+      	echo -e "Happy Admin!"
+      	exit 1
+   	fi
+
+		
+    createContainerMainDir
+
+    #----- WORDPRESS -----# 
+	if [ $include_wordpress ]; then
+    
+ 
+		createWordpressDataPersistence
+	if [ "$isTesting" == false ]; then
+
+
+		apacheBaseDir="$DEPLOY/$container_name/$apache_conf"
+	    addMainApache2Config  # very important
+	fi
+
+	# Always will check the certs 
+    if [ ! -f "$container_dir/$certs/$servercrt" ] || \
+			   [ ! -f "$container_dir/$certs/$serverkey" ]; then
+            echo -e "[$RESALT SSL Certs not found.! $RST]"
+			echo -e "$CYAN use -C true, to recreate it. $RST"
+    fi 
+
+    # SSL -- changes to listen at port 443
+    	if [ "$include_ssl" == true ]; then
+    		activeSSL
+    	fi
+
+   		createWordpressContainer
+	fi
+
+
+        
+    #--- MARIADB ----#
+    if [ $include_mariadb ]; then
+          createMariaDBDataPersistence
+          createMariaDBContainer
+    fi
+
+    if [ "$isTesting" == false ]; then
+		startSSLpostInstall
+	fi
+    
+    createContainerTools    
+    showContainerInfo
+	
+	echo -e "$INFO Restarting containers in 15 seconds to assure it works!"
+	sleep 15
+	$TOOLS/restart-$container_name
+
+	echo -e "$INFO Watch the network ports, by using" 
+	echo -e "\tnetstat -tnlp |egrep -i ($pub_web_prt|$pub_db_prt)"
+
+    
+echo -e "\nHappy Blogging.!"
+exit 0 
+# END

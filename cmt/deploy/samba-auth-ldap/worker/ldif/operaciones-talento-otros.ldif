@@ -1,0 +1,20 @@
+dn: cn=operaciones-tic,ou=Groups,dc=grupojules,dc=com
+objectClass: posixGroup
+cn: operaciones-tic
+gidNumber: 10000
+
+dn: cn=talentohumano,ou=Groups,dc=grupojules,dc=com
+objectClass: posixGroup
+cn: talentohumano
+gidNumber: 10002
+
+dn: cn=finanzas,ou=Groups,dc=grupojules,dc=com
+objectClass: posixGroup
+cn: finanzas
+gidNumber: 10003
+
+dn: cn=desarrollo-web,ou=Groups,dc=grupojules,dc=com
+objectClass: posixGroup
+cn: desarrollo-web
+gidNumber: 10004
+

@@ -1,0 +1,1 @@
+ldapsearch -x -LLL -h 192.268.250.1 -D admin -w 12qwaszx!! -b"dc=ad,dc=grupojules,dc=com" -s sub "(objectClass=user)" givenName

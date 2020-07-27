@@ -1,0 +1,6 @@
+# 
+# create CA
+echo "cn = Grupo Jules" > /etc/ssl/ca.info
+echo 'ca ' >> /etc/ssl/ca.info
+echo 'cert_signing_key ' >> /etc/ssl/ca.info
+echo 'expiration_days = 3650 ' >> /etc/ssl/ca.info

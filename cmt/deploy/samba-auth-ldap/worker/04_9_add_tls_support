@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# permission
+
+
+chgrp openldap /etc/ldap/ldap01_slapd_key.pem
+chmod 0640 /etc/ldap/ldap01_slapd_key.pem

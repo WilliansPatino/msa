@@ -1,0 +1,31 @@
+dn: uid=wpatino,ou=People,dc=grupojules,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: wpatino
+sn: Patino
+givenName: wpatino
+cn: wpatino
+displayName: Willians Patino
+uidNumber: 1000
+gidNumber: 10000
+userPassword: {SSHA}aOzfpoHJk9svd7vexZiHtdoeHmWXzAMK
+gecos: Willians Patino
+loginShell: /bin/bash
+homeDirectory: /home/wpatino
+shadowExpire: -1
+shadowFlag: 0
+shadowWarning: 7
+shadowMin: 8
+shadowMax: 999999
+shadowLastChange: 10877
+mail: wpatino@grupojules.com
+postalCode: 31000
+l: Toulouse
+o: grupojules.com
+mobile: +58 (414) 207 11 64
+homePhone: +33 (0)5 xx xx xx xx
+title: System Administrator
+postalAddress:
+initials: WP
+
