@@ -62,14 +62,14 @@ include_ssl=true               # parámetro del usuario
 recreateCerts=false
 
 # entorno principal de los microservicios
-msrv_path="/msa"
+msrv_path="~/msa"
 
 #  Container Management Tools / CMT  - Base
 CMT="$msrv_path/cmt"
 
 # directorio base de Container Deployments 
 ###DEPLOY="$msrv_path/dep"     # mudado a la raiz, a fin de separar del CMT
-DEPLOY="/deployments"
+DEPLOY="~/deployments"
 
 
 # gestion de containers (init, stop, remove)

@@ -907,10 +907,10 @@ if [ -d $container_dir ]; then
 fi
 
 #  here we'll choose the web internet ports 
-source /msa/cmt/deploy/complete-cms/check_web_ports
+source /msa/cmt/deploy/micro-LAMP/check_web_ports
 
 #source /msa/cmt/deploy/complete-cms/check_database_ports
-source /msa/cmt/deploy/complete-cms/check_database_ports
+source /msa/cmt/deploy/micro-LAMP/check_database_ports
 
 
 	
