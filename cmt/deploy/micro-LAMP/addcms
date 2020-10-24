@@ -106,6 +106,7 @@ Crear container LAMP basado en Apache,MariaDB y Wordpress.
   -F                 Forzar reinstalación   (default: false)
   -C                 Forzar la creación de certificados   (default: $recreateCerts)
   -L                 Publicar HTTP   (default: $isPublicHTTP)
+                 
 
 
 Remote admin user: $BULLET Will be created at runtime (default)
@@ -875,12 +876,12 @@ add_container_adminUser () {
 
 assign_permission () {
 
-  sudo chown wp:$localuser $container_dir
-  sudo chown wp:$localuser $container_dir/$html_dir
-  sudo chown wp:mse $container_dir/$apache_conf
-  sudo chown wp:mse $container_dir/$certs
-  sudo chown 999:$localuser $container_dir/$db_config  
-  sudo chown wp:mse $container_dir/$data_dir  
+  sudo chown ${USER}:$localuser $container_dir
+  sudo chown ${USER}:$localuser $container_dir/$html_dir
+  sudo chown ${USER}:mse $container_dir/$apache_conf
+  sudo chown ${USER}:mse $container_dir/$certs
+  sudo chown ${USER}:$localuser $container_dir/$db_config  
+  sudo chown ${USER}:mse $container_dir/$data_dir  
 }
 
 #---				 MAIN 
@@ -990,7 +991,8 @@ if $include_mariadb; then
     fi
   
     if ! $isTesting; then
-		    add_container_adminUser	
+		    #add_container_adminUser
+	    echo -e "$ALERT usuario del container no sera creado"	    
     fi
 fi
     createContainerTools    

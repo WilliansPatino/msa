@@ -21,9 +21,9 @@
 
 ####  clear && echo -e " $(basename "$0") " 
 
-. /msa/cmt/deploy/complete-cms/colors/setting
+. /msa/cmt/styles/setting
 
-. /msa/cmt/deploy/complete-cms/config/global
+. /msa/cmt/deploy/micro-LAMP/config/global
 
  # Include  Wordpress in this container      
     include_wordpress=false    # we only need mariadb
@@ -244,11 +244,11 @@ root_pass=$(pwgen -s 10 1)          # MariaDB root admin password
 
 
 # #  here we'll choose the web internet ports 
-# source /msa/cmt/deploy/complete-cms/check_web_ports
+# source /msa/cmt/deploy/micro_LAMP/check_web_ports
 
 # db management ports
-# #source /msa/cmt/deploy/complete-cms/check_database_ports
-# dbservices=$(/msa/cmt/deploy/complete-cms/check_database_ports)
+# #source /msa/cmt/deploy/micro_LAMP/check_database_ports
+# dbservices=$(/msa/cmt/deploy/micro_LAMP/check_database_ports)
 
 
 
@@ -864,10 +864,10 @@ if [ -d $container_dir ]; then
 fi
 
 # #  here we'll choose the web internet ports 
-# source /msa/cmt/deploy/complete-cms/check_web_ports
+# source /msa/cmt/deploy/micro_LAMP/check_web_ports
 
-#source /msa/cmt/deploy/complete-cms/check_database_ports
-source /msa/cmt/deploy/complete-cms/check_database_ports
+#source /msa/cmt/deploy/micro_LAMP/check_database_ports
+source /msa/cmt/deploy/micro-LAMP/check_database_ports
 
 
 	
