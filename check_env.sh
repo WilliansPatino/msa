@@ -35,7 +35,7 @@ docker_env() {
       ln -s /msa/cmt/deploy ~/deploy-tools
 	echo -e " Local link has been enabled as docker-deploy"
    else
-      echo -e "$OK Docker link is already enabled" 
+      echo -e "$OK Docker link is enabled" 
    fi
 }
 
