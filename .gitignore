@@ -1,4 +1,2 @@
 *.crt
 *.key
-/cmt/ssl
-cmt/ssl
